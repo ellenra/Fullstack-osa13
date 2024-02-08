@@ -3,6 +3,7 @@ const { Blog, User } = require('../models/index')
 const { Op } = require('sequelize')
 const { sequelize } = require('../util/db')
 const { tokenExtractor } = require('../util/middleware')
+const { ValidationError } = require('sequelize')
 
 router.get('/', async (req, res) => {
   const where = {}
@@ -26,7 +27,6 @@ router.get('/', async (req, res) => {
   res.json(blogs)
 })
 
-
 router.post('/', tokenExtractor, async (req, res, next) => {
   try {
     const user = await User.findByPk(req.decodedToken.id)
@@ -38,6 +38,9 @@ router.post('/', tokenExtractor, async (req, res, next) => {
     const blog = await Blog.create({...req.body, userId: user.id, date: new Date()})
     res.json(blog)
   } catch (error) {
+    if (error instanceof ValidationError) {
+      return res.status(400).json({ error: 'Year must be at least 1991 but not greater than current year' })
+  }
     next(error)
   }
 })
