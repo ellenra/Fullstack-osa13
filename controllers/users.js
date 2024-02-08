@@ -1,8 +1,8 @@
 const router = require('express').Router()
-const { errorHandler } = require('../util/middleware')
 const { Op } = require('sequelize')
 const { User } = require('../models')
 const { Blog } = require('../models')
+const { ValidationError } = require('sequelize')
 
 router.get('/', async (req, res) => {
   const users = await User.findAll({
@@ -15,9 +15,19 @@ router.get('/', async (req, res) => {
 })
 
 router.post('/', async (req, res) => {
-    const { username, name } = req.body
-    const user = await User.create({ username, name })
-    res.json(user)
+    try {
+        const { username, name } = req.body
+        const validateUser = User.build({ username, name })
+        await validateUser.validate()
+        const user = await User.create({ username, name })
+        res.json(user)
+    } catch (error) {
+        if (error instanceof ValidationError) {
+            const message = error.errors.map((i) => i.message)
+            return res.status(400).json({ error: message })
+        }
+        return res.status(400).json({ error: error.message })
+    }
 })
 
 router.get('/:id', async (req, res) => {
@@ -62,8 +72,12 @@ router.put('/:username', async (req, res) => {
             error: 'account disabled'
         })
     }
-    await user.update({ username: newUsername })
-    res.json(user)
+    try {
+        await user.update({ username: newUsername })
+        res.json(user)
+    } catch (error) {
+        return res.status(400).json({ error: 'Error in changing username' })
+    }
 })
 
 module.exports = router

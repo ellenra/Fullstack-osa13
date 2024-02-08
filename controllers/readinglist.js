@@ -1,5 +1,4 @@
 const router = require('express').Router()
-const { errorHandler } = require('../util/middleware')
 const { ReadingList, User } = require('../models')
 const { tokenExtractor } = require('../util/middleware')
 
@@ -22,8 +21,12 @@ router.put('/:id', tokenExtractor, async (req, res) => {
     if (bookEntry.id !== user.id) {
         return res.status(401).json({ error: 'You can only change own reading status!' })
     }
-    await bookEntry.update({ read: req.body.read })
-    res.json(bookEntry)
+    if (bookEntry) {
+        await bookEntry.update({ read: req.body.read })
+        res.json(bookEntry)
+    } else {
+        res.status(404).end()
+    }
 })
 
 

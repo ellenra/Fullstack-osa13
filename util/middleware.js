@@ -8,7 +8,7 @@ const errorHandler = (error, req, res, next) => {
         const message = error.errors.map(i => i.message)
         res.status(400).json({ error: message })
     } else {
-        res.status(400).json({ error: 'Error!' })
+        res.status(400).json({ error: error.message })
     }
     next(error)
 }
